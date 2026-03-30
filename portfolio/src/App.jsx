@@ -18,6 +18,7 @@ export default function Portfolio() {
 
   // Contact form state
   const [form, setForm] = useState({ name: "", email: "", message: "" });
+  const [formStatus, setFormStatus] = useState("");
 
   useEffect(() => {
     const current = roles[index % roles.length];
@@ -36,10 +37,33 @@ export default function Portfolio() {
     return () => clearInterval(interval);
   }, [index]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const mailto = `mailto:link2siva.m@gmail.com?subject=Portfolio Contact from ${form.name}&body=${form.message} (${form.email})`;
-    window.location.href = mailto;
+    setFormStatus("Sending...");
+
+    const formData = new FormData();
+    // Web3Forms API Authentication Key
+    formData.append("access_key", "6e0ed489-f12b-49c1-8c65-1d4562886a13");
+    formData.append("name", form.name);
+    formData.append("email", form.email);
+    formData.append("message", form.message);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFormStatus("Message sent successfully!");
+        setForm({ name: "", email: "", message: "" });
+        setTimeout(() => setFormStatus(""), 3000);
+      } else {
+        setFormStatus("Failed to send message.");
+      }
+    } catch (error) {
+      setFormStatus("Error sending message.");
+    }
   };
 
   return (
@@ -304,10 +328,17 @@ export default function Portfolio() {
       <section id="contact" className="py-16 px-4 md:px-10 text-center">
         <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-8">Contact Me</h2>
         <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
-          <input type="text" placeholder="Name" required className="w-full p-2 rounded bg-gray-700" onChange={(e) => setForm({ ...form, name: e.target.value })} />
-          <input type="email" placeholder="Email" required className="w-full p-2 rounded bg-gray-700" onChange={(e) => setForm({ ...form, email: e.target.value })} />
-          <textarea placeholder="Message" required className="w-full p-2 rounded bg-gray-700" onChange={(e) => setForm({ ...form, message: e.target.value })}></textarea>
-          <button className="cursor-pointer px-6 py-2 bg-blue-500 rounded">Send</button>
+          <input type="text" placeholder="Name" required className="w-full p-2 rounded bg-gray-700" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input type="email" placeholder="Email" required className="w-full p-2 rounded bg-gray-700" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <textarea placeholder="Message" required className="w-full p-2 rounded bg-gray-700" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })}></textarea>
+          <button disabled={formStatus === "Sending..."} className="cursor-pointer px-6 py-2 bg-blue-500 rounded disabled:opacity-50 w-full md:w-auto">
+            {formStatus === "Sending..." ? "Sending..." : "Send"}
+          </button>
+          {formStatus && formStatus !== "Sending..." && (
+            <p className={formStatus.includes("success") ? "text-green-400 mt-2" : "text-red-400 mt-2"}>
+              {formStatus}
+            </p>
+          )}
         </form>
       </section >
 
